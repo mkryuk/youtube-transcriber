@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  youtube-transcriber:
+    build:
+      context: .
+    container_name: youtube-transcriber
+    image: youtube-transcriber:latest
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: ['npx', 'ts-node', 'src/index.ts']
