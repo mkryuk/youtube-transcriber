@@ -13,7 +13,7 @@ export async function summarizeText(
       messages: [
         {
           role: 'system',
-          content: `You are a helpful assistant that summarizes text.`,
+          content: `You are a helpful assistant that summarizes text. Make a very detailed summary. Pay attention to the details. Point the main ideas.`,
         },
         {
           role: 'user',

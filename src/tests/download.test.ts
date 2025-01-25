@@ -3,8 +3,45 @@ import youtubedl from 'youtube-dl-exec';
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 
-jest.mock('youtube-dl-exec'); // Mock youtube-dl-exec
-jest.mock('fluent-ffmpeg'); // Mock fluent-ffmpeg
+jest.mock('youtube-dl-exec');
+jest.mock('fluent-ffmpeg');
+
+// mock FFmpeg behavior
+const mockFfmpeg = (simulateError = false) => {
+  (ffmpeg as unknown as jest.Mock).mockImplementation(() => {
+    const fakeFFmpeg: {
+      toFormat: jest.MockedFunction<() => typeof fakeFFmpeg>;
+      audioChannels: jest.MockedFunction<() => typeof fakeFFmpeg>;
+      audioFrequency: jest.MockedFunction<() => typeof fakeFFmpeg>;
+      save: jest.MockedFunction<() => typeof fakeFFmpeg>;
+      on: jest.MockedFunction<
+        (event: string, callback: (error?: Error) => void) => typeof fakeFFmpeg
+      >;
+      onEndCallback?: () => void;
+      onErrorCallback?: (error: Error) => void;
+    } = {
+      toFormat: jest.fn().mockReturnThis(),
+      audioChannels: jest.fn().mockReturnThis(),
+      audioFrequency: jest.fn().mockReturnThis(),
+      save: jest.fn().mockImplementation(() => {
+        setTimeout(() => {
+          if (simulateError && fakeFFmpeg.onErrorCallback) {
+            fakeFFmpeg.onErrorCallback(new Error('Conversion failed'));
+          } else if (fakeFFmpeg.onEndCallback) {
+            fakeFFmpeg.onEndCallback();
+          }
+        }, 10);
+        return fakeFFmpeg;
+      }),
+      on: jest.fn((event: string, callback: (error?: Error) => void) => {
+        if (event === 'end') fakeFFmpeg.onEndCallback = callback;
+        if (event === 'error') fakeFFmpeg.onErrorCallback = callback;
+        return fakeFFmpeg;
+      }),
+    };
+    return fakeFFmpeg;
+  });
+};
 
 describe('Download and Conversion Functions', () => {
   const videoUrl = 'https://youtu.be/example';
@@ -13,12 +50,11 @@ describe('Download and Conversion Functions', () => {
   const mockedWavPath = path.join(outputDir, 'audio.wav');
 
   beforeEach(() => {
-    jest.clearAllMocks(); // Clear mocks before each test
+    jest.clearAllMocks();
   });
 
   describe('downloadAudio', () => {
     it('should resolve with the correct audio path when download succeeds', async () => {
-      // Mock youtube-dl-exec to resolve successfully
       (youtubedl as unknown as jest.Mock).mockResolvedValueOnce(undefined);
 
       const result = await downloadAudio(videoUrl, outputDir);
@@ -31,7 +67,6 @@ describe('Download and Conversion Functions', () => {
     });
 
     it('should reject with an error when download fails', async () => {
-      // Mock youtube-dl-exec to reject with an error
       (youtubedl as unknown as jest.Mock).mockRejectedValueOnce(
         new Error('Download failed')
       );
@@ -44,46 +79,7 @@ describe('Download and Conversion Functions', () => {
 
   describe('convertToWav', () => {
     it('should resolve with the correct wav path when conversion succeeds', async () => {
-      // Mock fluent-ffmpeg to simulate a successful conversion
-      (ffmpeg as unknown as jest.Mock).mockImplementation(() => {
-        const fakeFFmpeg: {
-          toFormat: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          audioChannels: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          audioFrequency: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          save: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          on: jest.MockedFunction<
-            (event: string, callback: () => void) => typeof fakeFFmpeg
-          >;
-          onEndCallback?: () => void;
-          onErrorCallback?: (error: Error) => void;
-        } = {
-          toFormat: jest.fn().mockReturnThis(),
-          audioChannels: jest.fn().mockReturnThis(),
-          audioFrequency: jest.fn().mockReturnThis(),
-          save: jest.fn().mockImplementation(() => {
-            setTimeout(() => {
-              if (fakeFFmpeg.onEndCallback) {
-                fakeFFmpeg.onEndCallback();
-              }
-            }, 10);
-            return fakeFFmpeg;
-          }),
-          on: jest.fn((event: string, callback: () => void) => {
-            if (event === 'end') fakeFFmpeg.onEndCallback = callback;
-            return fakeFFmpeg;
-          }),
-        } as {
-          toFormat: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          audioChannels: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          audioFrequency: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          save: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          on: jest.MockedFunction<
-            (event: string, callback: () => void) => typeof fakeFFmpeg
-          >;
-          onEndCallback?: () => void;
-        };
-        return fakeFFmpeg;
-      });
+      mockFfmpeg(); // simulate success
 
       const result = await convertToWav(mockedAudioPath, outputDir);
       expect(result).toBe(mockedWavPath);
@@ -91,40 +87,7 @@ describe('Download and Conversion Functions', () => {
     });
 
     it('should reject with an error when conversion fails', async () => {
-      // Mock fluent-ffmpeg to simulate a conversion error
-      (ffmpeg as unknown as jest.Mock).mockImplementation(() => {
-        const fakeFFmpeg: {
-          toFormat: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          audioChannels: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          audioFrequency: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          save: jest.MockedFunction<() => typeof fakeFFmpeg>;
-          on: jest.MockedFunction<
-            (
-              event: string,
-              callback: (error?: Error) => void
-            ) => typeof fakeFFmpeg
-          >;
-          onEndCallback?: () => void;
-          onErrorCallback?: (error: Error) => void;
-        } = {
-          toFormat: jest.fn().mockReturnThis(),
-          audioChannels: jest.fn().mockReturnThis(),
-          audioFrequency: jest.fn().mockReturnThis(),
-          save: jest.fn().mockImplementation(() => {
-            setTimeout(() => {
-              if (fakeFFmpeg.onErrorCallback) {
-                fakeFFmpeg.onErrorCallback(new Error('Conversion failed'));
-              }
-            }, 10);
-            return fakeFFmpeg;
-          }),
-          on: jest.fn((event: string, callback: (error?: Error) => void) => {
-            if (event === 'error') fakeFFmpeg.onErrorCallback = callback;
-            return fakeFFmpeg;
-          }),
-        };
-        return fakeFFmpeg;
-      });
+      mockFfmpeg(true); // simulate error
 
       await expect(convertToWav(mockedAudioPath, outputDir)).rejects.toThrow(
         'Conversion failed'

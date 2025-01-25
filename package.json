@@ -8,8 +8,8 @@
     "test:watch": "jest --watch",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "pretty": "prettier --write .",
+    "pretty:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
