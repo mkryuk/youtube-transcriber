@@ -31,7 +31,7 @@ The application is containerized using Docker for easy setup and deployment.
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mkryuk/youtube-transcriber.git
 cd youtube-transcriber
 ```
 
