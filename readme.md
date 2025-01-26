@@ -13,6 +13,7 @@ The application is containerized using Docker for easy setup and deployment.
 ## Features
 
 - Supports multiple languages for transcription and summarization.
+- Allows input via YouTube video URL or local audio file.
 - Outputs transcription and summary as separate files.
 - Easy to run using Docker or locally on your system.
 
@@ -48,30 +49,56 @@ If running locally:
 npm install
 ```
 
+---
+
 ## Usage
 
 ### 1. Run Locally
 
-To run the application locally, use:
+You can run the application locally using the following options:
+
+#### **Using YouTube URL:**
 
 ```bash
-npx ts-node src/index.ts <YouTube URL> <Language Code>
+npx ts-node src/index.ts -y <YouTube URL> -l <Language Code> [-S]
 ```
 
-### 2. Run with Docker
-
-Build the Docker Image
+#### **Using Local Audio File:**
 
 ```bash
+npx ts-node src/index.ts -a <Audio File Path> -l <Language Code> [-S]
+```
+
+## Options:
+
+- -y, --youtube - The YouTube video URL.
+- -a, --audio - Path to the local audio file.
+- -l, --language - Language code for transcription (e.g., en for English, uk for Ukrainian).
+- -S, --summarize - Summarize the transcription (optional).
+
+
+## Example:
+
+Transcribe and summarize a YouTube video:
+
+```
+npx ts-node src/index.ts -y "https://youtu.be/url" -l "en" -S
+```
+
+Transcribe a local audio file without summarizing:
+```
+npx ts-node src/index.ts -a "./path/to/audio.wav" -l "en"
+```
+
+## Build the Docker Image
+```
 docker-compose build
 ```
 
-Run the Application
-
-```bash
-docker-compose run youtube-transcriber <YouTube URL> <Language Code>
+## Run the Application
 ```
-
+docker-compose run youtube-transcriber -y <YouTube URL> -l <Language Code> [-S]
+```
 ## Output
 
 The application saves the following files in the output directory:
