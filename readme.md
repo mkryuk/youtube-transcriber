@@ -71,11 +71,11 @@ npx ts-node src/index.ts -a <Audio File Path> -l <Language Code> [-S]
 
 ## Options:
 
+- -p, --prompt - Custom prompt for OpenAI.
 - -y, --youtube - The YouTube video URL.
 - -a, --audio - Path to the local audio file.
 - -l, --language - Language code for transcription (e.g., en for English, uk for Ukrainian).
 - -S, --summarize - Summarize the transcription (optional).
-
 
 ## Example:
 
@@ -86,19 +86,23 @@ npx ts-node src/index.ts -y "https://youtu.be/url" -l "en" -S
 ```
 
 Transcribe a local audio file without summarizing:
+
 ```
 npx ts-node src/index.ts -a "./path/to/audio.wav" -l "en"
 ```
 
 ## Build the Docker Image
+
 ```
 docker-compose build
 ```
 
 ## Run the Application
+
 ```
 docker-compose run youtube-transcriber -y <YouTube URL> -l <Language Code> [-S]
 ```
+
 ## Output
 
 The application saves the following files in the output directory:

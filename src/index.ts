@@ -7,6 +7,7 @@ import { splitAudio } from './split';
 import { downloadAudio, convertToWav } from './download';
 import { transcribeAudio } from './transcribe';
 import { summarizeText } from './summarize';
+import { processPrompt } from './prompt';
 
 dotenv.config();
 
@@ -37,14 +38,26 @@ async function main() {
       describe: 'Summarize the transcription',
       default: false,
     })
+    .option('prompt', {
+      alias: 'p',
+      type: 'string',
+      describe: 'Custom prompt for OpenAI',
+    })
     .help().argv as {
     youtube?: string;
     audio?: string;
     language: string;
     summarize: boolean;
+    prompt?: string;
   }; // explicit type cast for argv
 
-  const { youtube: videoUrl, audio: audioFilePath, language, summarize } = argv;
+  const {
+    youtube: videoUrl,
+    audio: audioFilePath,
+    language,
+    summarize,
+    prompt,
+  } = argv;
   const outputDir = path.resolve(__dirname, '../output');
 
   // ensure the output directory exists
@@ -76,6 +89,7 @@ async function main() {
     const transcriptions: string[] = [];
     for (const chunkPath of chunkPaths) {
       const transcription = await transcribeAudio(chunkPath, language);
+      console.log(`Processed chunk: ${chunkPath}`);
       transcriptions.push(transcription);
     }
 
@@ -94,6 +108,17 @@ async function main() {
       const summaryFile = path.join(outputDir, 'summary.txt');
       fs.writeFileSync(summaryFile, summary, 'utf8');
       console.log(`Summary saved to ${summaryFile}`);
+    }
+
+    if (prompt) {
+      console.log('Sending custom prompt to OpenAI...');
+      const result = await processPrompt(fullTranscription, prompt);
+
+      // save the result to a file
+      const resultFile = path.join(outputDir, 'result.txt');
+      fs.writeFileSync(resultFile, result, 'utf8');
+      console.log(`Result saved to ${resultFile}`);
+      return;
     }
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);
