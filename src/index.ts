@@ -11,7 +11,7 @@ import { processPrompt } from './prompt';
 
 dotenv.config();
 
-async function main() {
+export async function main() {
   // define and parse command-line arguments
   const argv = yargs(hideBin(process.argv))
     .option('youtube', {
